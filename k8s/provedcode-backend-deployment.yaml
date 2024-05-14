@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provedcode-backend-deployment
+  labels:
+    app: provedcode-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: provedcode-backend
+  template:
+    metadata:
+      labels:
+        app: provedcode-backend
+    spec:
+      containers:
+      - name: provedcode-backend
+        image: mnemov/provedcode-backend
+        ports: 
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /api/v2/talents?page=0&size=5
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v2/talents?page=0&size=5
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        env:
+          - name: S3_REGION
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: S3_REGION
+          - name: BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: BUCKET
+          - name: S3_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: S3_ACCESS_KEY
+          - name: S3_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: S3_SECRET_KEY
+          - name: DB_URL
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: DB_URL
+          - name: DB_LOGIN
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: DB_LOGIN
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: DB_PASSWORD
+          - name: SPRING_PROFILES_ACTIVE
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: SPRING_PROFILES_ACTIVE
+          - name: EMAIL_USER  
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: EMAIL_USER
+          - name: EMAIL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: provedcode-backend-secret
+                key: EMAIL_PASSWORD
+
+      affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - provedcode-backend
+                topologyKey: "kubernetes.io/hostname"
